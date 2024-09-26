@@ -99,13 +99,32 @@ function Makie.convert_arguments(::Type{<:Makie.Scatter}, pg::PlotGrid)
 end
 
 function Makie.convert_arguments(::Type{PlotGridMesh}, trian::Triangulation)
-    grid = to_grid(trian)
+    grid = to_viz_grid(trian)
     (PlotGrid(grid), )
 end
 
+# This ends in backwards compatibility edge case in Makie/src/interfaces.jl#L249
 function Makie.convert_arguments(t::Type{<:Union{Makie.Wireframe, Makie.Scatter}}, trian::Triangulation)
-    grid = to_grid(trian)
+    grid = to_viz_grid(trian)
     Makie.convert_arguments(t, PlotGrid(grid))
+end
+
+# Arrows plot of vector fields
+function Makie.convert_arguments(t::Type{<:Makie.Arrows}, F::CellField)
+    trian = get_triangulation(F)
+    Makie.convert_arguments(t, trian, F)
+end
+
+function Makie.convert_arguments(t::Type{<:Makie.Arrows}, trian::Triangulation, F::CellField)
+  vds = visualization_data(trian, "", cellfields=[""=>F])
+  vizdata = first(vds)
+
+  node_coords = get_node_coordinates(vizdata.grid)
+  x = map(to_point, node_coords)                    # convert to PointD
+  vecval_nodaldata = first(first(vds).nodaldata)[2]
+  vec_nodaldata = map(to_vector, vecval_nodaldata)  # convert to VecD
+
+  (x, vec_nodaldata)
 end
 
 # Set default plottype as mesh if argument is type Triangulation, i.e., mesh(Ω) == plot(Ω).
@@ -127,7 +146,7 @@ end
 # appealing from the point of view of the user.
 function Makie.plot!(p::MeshField{<:Tuple{Triangulation, Any}})
     trian, uh = p[1:2]
-    grid_and_data = Makie.lift(to_grid, trian, uh)
+    grid_and_data = Makie.lift(to_viz_grid_data, trian, uh)
     pg = Makie.lift(i->PlotGrid(i[1]), grid_and_data)
     p[:color] = Makie.lift(i->i[2], grid_and_data)
     if p[:colorrange][] === Makie.automatic
@@ -143,7 +162,7 @@ Makie.plottype(::Triangulation, ::Any) = MeshField
 function Makie.plot!(p::MeshField{<:Tuple{CellField}})
     uh = p[1]
     trian = Makie.lift(get_triangulation, uh)
-    grid_and_data = Makie.lift(to_grid, trian, uh)
+    grid_and_data = Makie.lift(to_viz_grid_data, trian, uh)
     pg = Makie.lift(i->PlotGrid(i[1]), grid_and_data)
     p[:color] = Makie.lift(i->i[2], grid_and_data)
     if p[:colorrange][] === Makie.automatic

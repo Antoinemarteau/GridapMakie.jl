@@ -21,8 +21,7 @@ function savefig(f, suffix::String)
     return true
 end
 
-@testset "Tests 2D" begin
-
+@testset "Tests 2D simplex mesh" begin
     domain = (0,1,0,1)
     cell_nums = (10,10)
     model = CartesianDiscreteModel(domain,cell_nums) |> simplexify
@@ -66,14 +65,61 @@ end
         Colorbar(fig[1,2], plt)
         fig
     end
-    @test savefig("2d_fig15") do 
+    @test savefig("2d_fig15") do
         fig, _ , plt = plot(uh, colormap=:Spectral)
         Colorbar(fig[1,2], plt)
-        fig   
+        fig
     end
 end
 
-@testset "Tests 3D" begin
+@testset "Tests 2D" begin
+
+    domain = (0,1,0,1)
+    cell_nums = (10,10)
+    model = CartesianDiscreteModel(domain,cell_nums)
+    Ω = Triangulation(model)
+    Γ = BoundaryTriangulation(model)
+    Λ = SkeletonTriangulation(model)
+    n_Λ = get_normal_vector(Λ)
+    reffe = ReferenceFE(lagrangian,Float64,1)
+    V = FESpace(model,reffe)
+    uh = interpolate(x->sin(π*(x[1]+x[2])),V)
+    celldata = rand(num_cells(Ω))
+
+    @test savefig("2d_nosimplex_Fig1") do
+        fig = plot(Ω)
+        wireframe!(Ω, linestyle=:dash, color=:black)
+        scatter!(Ω, markersize=10, marker=:diamond, color=:brown2)
+        fig
+    end
+    @test savefig("2d_nosimplex_Fig11") do
+        fig, _ , sc = plot(Ω, uh)
+        Colorbar(fig[1,2], sc)
+        fig
+    end
+    @test savefig("2d_nosimplex_Fig111") do
+        fig,_,sc = plot(Γ, uh, colormap=:algae, linewidth=10)
+        Colorbar(fig[1,2],sc)
+        fig
+    end
+    @test savefig("2d_nosimplex_Fig12") do
+        fig = plot(Ω, color=:green)
+        wireframe!(Ω, color=:red, linewidth=2.5)
+        fig
+    end
+    @test savefig("2d_nosimplex_Fig14") do
+        fig, _ , plt = plot(Λ, jump(n_Λ⋅∇(uh)),linewidth=4)
+        Colorbar(fig[1,2], plt)
+        fig
+    end broken=true
+    @test savefig("2d_nosimplex_fig15") do
+        fig, _ , plt = plot(uh, colormap=:Spectral)
+        Colorbar(fig[1,2], plt)
+        fig
+    end
+end
+
+@testset "Tests 3D simplex mesh" begin
 
     domain = (0,1,0,1,0,1)
     cell_nums = (10,10,10)
@@ -118,10 +164,57 @@ end
         Colorbar(fig[1,2],plt)
         fig
     end
-    @test savefig("3d_fig15") do 
+    @test savefig("3d_fig15") do
         fig, _ , plt = plot(uh, colormap=:Spectral, colorrange=(0,1))
         Colorbar(fig[1,2], plt)
-        fig   
+        fig
+    end
+end
+
+@testset "Tests 3D" begin
+
+    domain = (0,1,0,1,0,1)
+    cell_nums = (10,10,10)
+    model = CartesianDiscreteModel(domain,cell_nums)
+    Ω = Triangulation(model)
+    Γ = BoundaryTriangulation(model)
+    Λ = SkeletonTriangulation(model)
+    n_Λ = get_normal_vector(Λ)
+    reffe = ReferenceFE(lagrangian,Float64,1)
+    V = FESpace(model,reffe)
+    uh = interpolate(x->sin(π*(x[1]+x[2]+x[3])),V)
+    celldata = rand(num_cells(Ω))
+
+    @test savefig("3d_nosimplex_Fig1") do
+        fig = plot(Ω)
+        wireframe!(Ω)
+        scatter!(Ω)
+        fig
+    end
+    @test savefig("3d_nosimplex_Fig11") do
+        fig, _ , sc = plot(Ω, uh, colorrange=(0,1))
+        Colorbar(fig[1,2],sc)
+        fig
+    end
+    @test savefig("3d_nosimplex_Fig111") do
+        fig, _ , sc = plot(Γ, uh, colormap=:algae)
+        Colorbar(fig[1,2],sc)
+        fig
+    end
+    @test savefig("3d_nosimplex_Fig12") do
+        fig = plot(Ω, color=:green)
+        wireframe!(Ω, color=:red, linewidth=2.5)
+        fig
+    end
+    @test savefig("3d_nosimplex_Fig14") do
+        fig, _ , plt = plot(Λ, jump(n_Λ⋅∇(uh)))
+        Colorbar(fig[1,2],plt)
+        fig
+    end broken=true
+    @test savefig("3d_nosimplex_fig15") do
+        fig, _ , plt = plot(uh, colormap=:Spectral, colorrange=(0,1))
+        Colorbar(fig[1,2], plt)
+        fig
     end
 end
 

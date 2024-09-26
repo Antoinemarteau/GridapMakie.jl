@@ -4,7 +4,7 @@ function to_plot_dg_mesh(grid::Grid)
 end
 
 function to_plot_dg_mesh(grid::UnstructuredGrid)
-    to_simplex_grid(grid) |> to_dg_mesh
+    to_dg_mesh(grid)
 end
 
 function to_plot_mesh(grid::Grid)
@@ -12,14 +12,7 @@ function to_plot_mesh(grid::Grid)
 end
 
 function to_plot_mesh(grid::UnstructuredGrid)
-    to_simplex_grid(grid) |> to_mesh
-end
-
-# For the moment, we simplexify all grids (missing support for quads or general polytopes).
-function to_simplex_grid(grid::UnstructuredGrid)
-  reffes = get_reffes(grid)
-  polys = map(get_polytope,reffes)
-  all(is_simplex,polys) ? grid : simplexify(grid)
+    to_mesh(grid)
 end
 
 # Create continuous GeometryBasics mesh equivalent of our grid.
@@ -41,6 +34,10 @@ end
 # Create discontinuous grid with the corresponding handling of nodal or cell fields.
 function to_point(x::VectorValue{D,T}) where {D,T}
   GeometryBasics.Point{D,T}(Tuple(x))
+end
+
+function to_vector(x::VectorValue{D,T}) where {D,T}
+  GeometryBasics.Vec{D,T}(Tuple(x))
 end
 
 function to_dg_points(grid::UnstructuredGrid)
@@ -162,19 +159,42 @@ function to_face_grid_with_map(grid::Grid)
   g,face_to_cell
 end
 
+
 # Obtain grid and cellfield from triangulation:
-function to_grid(trian::Triangulation)
-  vds = visualization_data(trian,"")
+
+function to_viz_grid(trian::Triangulation)
+  simplex_trian = simplexify_trian(trian)
+  vds = visualization_data(simplex_trian,"")
   first(vds).grid
 end
 
-function to_grid(trian::Triangulation, uh::Any)
-  vds = visualization_data(trian, "", cellfields=[""=>uh])
+function to_viz_grid_data(trian::Triangulation, uh::Any)
+  simplex_trian = simplexify_trian(trian)
+  vds = visualization_data(simplex_trian, "", cellfields=[""=>uh])
   grid = first(vds).grid
   nodaldata = first(first(vds).nodaldata)[2]
   scalarnodaldata = map(to_scalar, nodaldata)
   grid, scalarnodaldata
 end
+
+# For the moment, we simplexify all grids (missing support for quads or general polytopes).
+function simplexify_trian(trian::T) where T<:Triangulation
+  model = get_background_model(trian)
+  reffes = get_reffes(model)
+  polys = map(get_polytope,reffes)
+  all(is_simplex,polys) && return trian
+  simplex_model = try
+    refine(SimplexifyRefinement(), model)
+  catch err
+    @warn "Cannot plot function, the underlying discrete model must be simplexifyable by Gridap.Adaptivity.refine"
+    rethrow(err)
+  end
+  _recast_triangulation(T, simplex_model)
+end
+
+_recast_triangulation(::Type{<:Triangulation}, model) = Triangulation(model)
+_recast_triangulation(::Type{SkeletonTriangulation}, model) = SkeletonTriangulation(model)
+
 
 to_scalar(x) = x
 to_scalar(x::VectorValue) = norm(x)
