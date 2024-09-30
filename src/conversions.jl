@@ -189,8 +189,11 @@ function simplexify_trian(trian::T) where T<:Triangulation
     @warn "Cannot plot function, the underlying discrete model must be simplexifyable by Gridap.Adaptivity.refine"
     rethrow(err)
   end
-  Triangulation(simplex_model)
+  _recast_triangulation(T, simplex_model)
 end
+
+_recast_triangulation(::Type{<:Triangulation}, model) = Triangulation(model)
+_recast_triangulation(::Type{<:BoundaryTriangulation}, model) = BoundaryTriangulation(model)
 
 function simplexify_trian(trian::SkeletonTriangulation)
   # TODO doesnt work for skeletons of 3D nonsimplex models, where a refine is needed.
