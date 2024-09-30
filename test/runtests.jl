@@ -132,7 +132,7 @@ end
         fig, _ , plt = plot(Λ, jump(n_Λ⋅∇(uh)),linewidth=4)
         Colorbar(fig[1,2], plt)
         fig
-    end broken=true
+    end
     @test savefig("2d_nosimplex_fig15") do
         fig, _ , plt = plot(uh, colormap=:Spectral)
         Colorbar(fig[1,2], plt)
@@ -231,7 +231,7 @@ end
         fig, _ , plt = plot(Λ, jump(n_Λ⋅∇(uh)))
         Colorbar(fig[1,2],plt)
         fig
-    end broken=true
+    end skip=true # need simplexify of SkeletonTriangulation
     @test savefig("3d_nosimplex_fig15") do
         fig, _ , plt = plot(uh, colormap=:Spectral, colorrange=(0,1))
         Colorbar(fig[1,2], plt)
