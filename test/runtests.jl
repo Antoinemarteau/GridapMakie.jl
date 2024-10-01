@@ -106,6 +106,7 @@ end
     V = FESpace(model,reffe)
     uh = interpolate(x->sin(π*(x[1]+x[2])),V)
     celldata = rand(num_cells(Ω))
+    cellfield = CellField(celldata, Ω)
 
     @test savefig("2d_nosimplex_Fig1") do
         fig = plot(Ω)
@@ -126,6 +127,11 @@ end
     @test savefig("2d_nosimplex_Fig12") do
         fig = plot(Ω, color=:green)
         wireframe!(Ω, color=:red, linewidth=2.5)
+        fig
+    end
+    @test savefig("2d_nosymplex_Fig13") do
+        fig, _ , plt = plot(Ω, cellfield, colormap=:heat)
+        Colorbar(fig[1,2], plt)
         fig
     end
     @test savefig("2d_nosimplex_Fig14") do
@@ -205,6 +211,7 @@ end
     V = FESpace(model,reffe)
     uh = interpolate(x->sin(π*(x[1]+x[2]+x[3])),V)
     celldata = rand(num_cells(Ω))
+    cellfield = CellField(celldata, Ω)
 
     @test savefig("3d_nosimplex_Fig1") do
         fig = plot(Ω)
@@ -225,6 +232,11 @@ end
     @test savefig("3d_nosimplex_Fig12") do
         fig = plot(Ω, color=:green)
         wireframe!(Ω, color=:red, linewidth=2.5)
+        fig
+    end
+    @test savefig("3d_nosimplex_Fig13") do
+        fig, _ , plt = plot(Ω, cellfield, colormap=:heat)
+        Colorbar(fig[1,2], plt)
         fig
     end
     @test savefig("3d_nosimplex_Fig14") do
